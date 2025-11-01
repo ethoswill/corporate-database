@@ -28,13 +28,11 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->passwordReset()
-            ->brandName('Corporate Database')
-            ->brandLogo(asset('favicon.ico'))
-            ->darkModeBrandLogo(asset('favicon.ico'))
-            ->favicon(asset('favicon.ico'))
+            ->brandName('Ethos')
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::Blue,
             ])
+            ->topNavigation()
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([

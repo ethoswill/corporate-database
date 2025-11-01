@@ -12,15 +12,14 @@ class CalendarEvent extends Model
     protected $fillable = [
         'company_name',
         'event_title',
-        'notes',
         'event_date',
-        'start_time',
-        'end_time',
-        'attachments',
+        'notes',
+        'attachment_path',
+        'attachment_name',
+        'color',
     ];
 
     protected $casts = [
         'event_date' => 'date',
-        'attachments' => 'array',
     ];
 }

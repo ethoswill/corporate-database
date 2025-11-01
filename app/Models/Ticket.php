@@ -20,10 +20,12 @@ class Ticket extends Model
         'status',
         'priority',
         'last_message_at',
+        'is_unread',
     ];
 
     protected $casts = [
         'last_message_at' => 'datetime',
+        'is_unread' => 'boolean',
     ];
 
     /**
@@ -59,11 +61,19 @@ class Ticket extends Model
     }
 
     /**
-     * Scope to get only open tickets.
+     * Scope to get only unread tickets.
      */
-    public function scopeOpen($query)
+    public function scopeUnread($query)
     {
-        return $query->where('status', 'open');
+        return $query->where('status', 'unread');
+    }
+
+    /**
+     * Scope to get only awaiting reply tickets.
+     */
+    public function scopeAwaitingReply($query)
+    {
+        return $query->where('status', 'awaiting_reply');
     }
 
     /**
@@ -83,10 +93,18 @@ class Ticket extends Model
     }
 
     /**
-     * Open the ticket.
+     * Mark ticket as awaiting reply.
      */
-    public function open(): void
+    public function markAsAwaitingReply(): void
     {
-        $this->update(['status' => 'open']);
+        $this->update(['status' => 'awaiting_reply']);
+    }
+
+    /**
+     * Mark ticket as unread.
+     */
+    public function markAsUnread(): void
+    {
+        $this->update(['status' => 'unread']);
     }
 }
