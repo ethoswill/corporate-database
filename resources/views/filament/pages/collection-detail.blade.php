@@ -1,5 +1,41 @@
 <x-filament-panels::page>
     <div class="space-y-6 w-full" style="max-width: 100%; width: 100%;">
+        <!-- Breadcrumb -->
+        <div class="flex items-center gap-2 text-sm text-gray-600 mb-4 flex-wrap">
+            <a 
+                href="{{ \App\Filament\Pages\Assets::getUrl() }}"
+                class="hover:text-gray-900 transition"
+            >
+                Collections
+            </a>
+            @if($parentCollection)
+                @php
+                    $breadcrumbs = [];
+                    $current = $parentCollection;
+                    while ($current) {
+                        $breadcrumbs[] = $current;
+                        $current = $current->parent;
+                    }
+                    $breadcrumbs = array_reverse($breadcrumbs);
+                @endphp
+                @foreach($breadcrumbs as $index => $crumb)
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                    @if($index < count($breadcrumbs) - 1)
+                        <a 
+                            href="{{ \App\Filament\Pages\CollectionDetail::getUrl(['collection' => $crumb->id]) }}"
+                            class="hover:text-gray-900 transition"
+                        >
+                            {{ $crumb->name }}
+                        </a>
+                    @else
+                        <span class="text-gray-900 font-medium">{{ $crumb->name }}</span>
+                    @endif
+                @endforeach
+            @endif
+        </div>
+
         <!-- Sorting Controls -->
         <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-3">
@@ -23,12 +59,7 @@
                 $regular = array_filter($collections ?? [], fn($c) => ($c['is_favorite'] ?? false) == false);
             @endphp
 
-            @php
-                $hasFavorites = count($favorites) > 0;
-                $hasRegular = count($regular) > 0;
-            @endphp
-
-            @if($hasFavorites)
+            @if(count($favorites) > 0)
                 <!-- Favorites Section -->
                 <div class="col-span-4 mb-2">
                     <h3 class="text-lg font-semibold text-gray-900">Favorites</h3>
@@ -37,9 +68,9 @@
                     @include('filament.pages.partials.collection-card', ['collection' => $favCollection])
                 @endforeach
 
-                @if($hasRegular)
+                @if(count($regular) > 0)
                     <div class="col-span-4 mb-2 mt-6">
-                        <h3 class="text-lg font-semibold text-gray-900">All Collections</h3>
+                        <h3 class="text-lg font-semibold text-gray-900">All Folders</h3>
                     </div>
                 @endif
             @endif
@@ -47,12 +78,8 @@
             @forelse($regular as $collection)
                 @include('filament.pages.partials.collection-card', ['collection' => $collection])
             @empty
-                <div class="col-span-4 text-center py-12">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <h3 class="mt-2 text-sm font-medium text-gray-900">No collections</h3>
-                    <p class="mt-1 text-sm text-gray-500">Get started by creating a new collection.</p>
+                <div class="col-span-4 text-center py-12 text-gray-500 dark:text-gray-400">
+                    <p class="text-sm">No folders yet. Create your first folder to get started.</p>
                 </div>
             @endforelse
         </div>
@@ -144,3 +171,4 @@
         </form>
     </x-filament::modal>
 </x-filament-panels::page>
+

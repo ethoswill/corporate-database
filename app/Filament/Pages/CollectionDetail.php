@@ -9,42 +9,42 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Panel;
 use Filament\Support\Enums\MaxWidth;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Livewire\WithFileUploads;
 
-class Assets extends Page
+class CollectionDetail extends Page
 {
     use WithFileUploads;
 
-    protected static ?string $navigationIcon = 'heroicon-o-photo';
-
-    protected static ?string $navigationLabel = 'Collections';
-
-    protected static ?string $navigationGroup = 'Main';
-
-    protected static ?int $navigationSort = 4;
-
-    protected static string $view = 'filament.pages.assets';
-
-    protected static ?string $title = 'Collections';
-
-    protected static ?string $slug = 'collections';
-
+    protected static ?string $navigationIcon = null;
+    
+    protected static bool $shouldRegisterNavigation = false;
+    
+    protected static string $view = 'filament.pages.collection-detail';
+    
+    protected static ?string $slug = null;
+    
     protected ?string $maxContentWidth = 'full';
 
     public function getMaxContentWidth(): string
     {
-        return \Filament\Support\Enums\MaxWidth::Full->value;
+        return MaxWidth::Full->value;
     }
 
     protected function getViewData(): array
     {
         return array_merge(parent::getViewData(), [
             'collections' => $this->collections,
+            'parentCollection' => $this->parentCollection,
         ]);
     }
 
+    public $collectionId;
+    public $parentCollection = null;
     public $collections = [];
     public $editingCollectionId = null;
     public $uploadingCollectionId = null;
@@ -64,9 +64,18 @@ class Assets extends Page
         'name' => '',
     ];
 
-    public function mount(): void
+    public function mount($collection = null): void
     {
+        // Handle route parameter (Livewire passes it as property)
+        $this->collectionId = $collection ?? request()->route('collection') ?? request()->query('collection');
+        
+        if (!$this->collectionId) {
+            redirect()->route('filament.admin.pages.collections')->send();
+            return;
+        }
+        
         $this->sortBy = request()->query('sort', 'date_desc');
+        $this->loadCollection();
         $this->loadCollections();
     }
 
@@ -75,14 +84,43 @@ class Assets extends Page
         $this->loadCollections();
     }
 
+    protected function loadCollection(): void
+    {
+        $this->parentCollection = Collection::with(['parent'])->find($this->collectionId);
+        
+        if (!$this->parentCollection) {
+            Notification::make()
+                ->title('Collection not found')
+                ->danger()
+                ->send();
+            
+            redirect()->route('filament.admin.pages.collections')->send();
+            return;
+        }
+        
+        // Load full parent chain recursively for breadcrumbs
+        $this->loadParentChain($this->parentCollection);
+    }
+    
+    protected function loadParentChain(Collection $collection): void
+    {
+        if ($collection->parent_id && !$collection->relationLoaded('parent')) {
+            $collection->load('parent');
+        }
+        
+        if ($collection->parent) {
+            $this->loadParentChain($collection->parent);
+        }
+    }
+
     public function loadCollections(): void
     {
         // Load favorites and regular collections separately
-        $favoritesQuery = Collection::whereNull('parent_id')
+        $favoritesQuery = Collection::where('parent_id', $this->collectionId)
             ->where('is_favorite', true)
             ->withCount(['assets', 'children']);
 
-        $regularQuery = Collection::whereNull('parent_id')
+        $regularQuery = Collection::where('parent_id', $this->collectionId)
             ->where('is_favorite', false)
             ->withCount(['assets', 'children']);
 
@@ -211,6 +249,7 @@ class Assets extends Page
             $collection = Collection::find($collectionId);
         } else {
             $collection = new Collection();
+            $collection->parent_id = $this->collectionId;
         }
 
         $collection->name = $data['name'] ?? ($collection->name ?? 'New Collection');
@@ -269,11 +308,11 @@ class Assets extends Page
     {
         return [
             Action::make('create')
-                ->label('Create Collection')
+                ->label('Create Folder')
                 ->icon('heroicon-o-plus-circle')
                 ->form([
                     TextInput::make('name')
-                        ->label('Collection Name')
+                        ->label('Folder Name')
                         ->required()
                         ->maxLength(255),
                     Textarea::make('description')
@@ -292,4 +331,28 @@ class Assets extends Page
         ];
     }
 
+    public static function routes(Panel $panel): void
+    {
+        Route::get('/collections/{collection}', static::class)
+            ->middleware(static::getRouteMiddleware($panel))
+            ->withoutMiddleware(static::getWithoutRouteMiddleware($panel))
+            ->name(static::getRelativeRouteName());
+    }
+
+    public static function getRelativeRouteName(): string
+    {
+        return 'collection-detail';
+    }
+
+    public static function getUrl(array $parameters = [], bool $isAbsolute = true, ?string $panel = null, ?Model $tenant = null): string
+    {
+        $collectionId = $parameters['collection'] ?? $parameters['id'] ?? null;
+        
+        if (!$collectionId) {
+            return parent::getUrl($parameters, $isAbsolute, $panel, $tenant);
+        }
+        
+        return route('filament.admin.pages.collection-detail', ['collection' => $collectionId], $isAbsolute);
+    }
 }
+

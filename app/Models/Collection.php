@@ -17,6 +17,11 @@ class Collection extends Model
         'description',
         'color',
         'cover_image_path',
+        'is_favorite',
+    ];
+
+    protected $casts = [
+        'is_favorite' => 'boolean',
     ];
 
     public function assets(): HasMany
