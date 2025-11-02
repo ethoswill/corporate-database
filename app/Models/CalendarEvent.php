@@ -17,9 +17,15 @@ class CalendarEvent extends Model
         'attachment_path',
         'attachment_name',
         'color',
+        'reminder_enabled',
     ];
 
     protected $casts = [
         'event_date' => 'date',
     ];
+
+    public function tasks()
+    {
+        return $this->hasMany(EventTask::class);
+    }
 }

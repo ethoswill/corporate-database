@@ -3,9 +3,11 @@
 namespace App\Filament\Pages;
 
 use App\Models\CalendarEvent;
+use App\Models\EventTask;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -15,7 +17,7 @@ class LaunchCalendar extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
 
-    protected static ?string $navigationLabel = 'Launch Calendar';
+    protected static ?string $navigationLabel = 'Events';
 
     protected static ?int $navigationSort = 3;
 
@@ -36,6 +38,17 @@ class LaunchCalendar extends Page
     // Calendar navigation
     public $currentMonth = null;
     public $currentYear = null;
+    
+    // View mode: 'calendar' or 'cards'
+    public $viewMode = 'cards';
+    
+    // Task management
+    public $taskTitle = '';
+    public $taskDescription = '';
+    public $taskDueDate = '';
+    public $taskAssignedTo = null;
+    public $showTaskModal = false;
+    public $managingTasksForEventId = null;
 
     protected function getHeaderActions(): array
     {
@@ -86,6 +99,7 @@ class LaunchCalendar extends Page
     public function getEventsProperty()
     {
         return CalendarEvent::query()
+            ->with('tasks.assignedTo')
             ->when($this->filterCompany, function ($query) {
                 $query->where('company_name', $this->filterCompany);
             })
@@ -226,7 +240,7 @@ class LaunchCalendar extends Page
             return null;
         }
         
-        return CalendarEvent::find($this->viewingEventId);
+        return CalendarEvent::with('tasks.assignedTo')->find($this->viewingEventId);
     }
 
     public function getGoogleCalendarUrlProperty()
@@ -252,6 +266,74 @@ class LaunchCalendar extends Page
 
         Notification::make()
             ->title($event->reminder_enabled ? 'Reminder enabled' : 'Reminder disabled')
+            ->success()
+            ->send();
+    }
+
+    public function showTaskModal(int $eventId): void
+    {
+        $this->managingTasksForEventId = $eventId;
+        $this->taskDueDate = now()->addDays(7)->format('Y-m-d');
+        $this->showTaskModal = true;
+    }
+
+    public function closeTaskModal(): void
+    {
+        $this->showTaskModal = false;
+        $this->managingTasksForEventId = null;
+        $this->resetTaskForm();
+    }
+
+    public function createTask(): void
+    {
+        $this->validate([
+            'taskTitle' => 'required|string|max:255',
+            'taskDueDate' => 'required|date',
+            'taskAssignedTo' => 'nullable|exists:users,id',
+        ]);
+
+        EventTask::create([
+            'calendar_event_id' => $this->managingTasksForEventId,
+            'assigned_to_id' => $this->taskAssignedTo,
+            'task_title' => $this->taskTitle,
+            'task_description' => $this->taskDescription,
+            'due_date' => $this->taskDueDate,
+        ]);
+
+        Notification::make()
+            ->title('Task created successfully')
+            ->success()
+            ->send();
+
+        $this->closeTaskModal();
+    }
+
+    public function resetTaskForm(): void
+    {
+        $this->taskTitle = '';
+        $this->taskDescription = '';
+        $this->taskDueDate = '';
+        $this->taskAssignedTo = null;
+    }
+
+    public function toggleTaskCompletion(int $taskId): void
+    {
+        $task = EventTask::findOrFail($taskId);
+        $task->completed = !$task->completed;
+        $task->save();
+
+        Notification::make()
+            ->title($task->completed ? 'Task marked as completed' : 'Task marked as incomplete')
+            ->success()
+            ->send();
+    }
+
+    public function deleteTask(int $taskId): void
+    {
+        EventTask::findOrFail($taskId)->delete();
+
+        Notification::make()
+            ->title('Task deleted successfully')
             ->success()
             ->send();
     }

@@ -16,25 +16,157 @@
         <!-- Calendar Header -->
         <div class="flex items-center justify-between mb-3">
             <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {{ $startDate->format('F Y') }}
+                {{ $viewMode === 'calendar' ? $startDate->format('F Y') : 'Upcoming Events' }}
             </h2>
             <div class="flex items-center gap-2">
-                <button wire:click="previousMonth" class="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                    </svg>
-                </button>
-                <button wire:click="goToToday" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-                    Today
-                </button>
-                <button wire:click="nextMonth" class="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                </button>
+                @if($viewMode === 'calendar')
+                    <button wire:click="previousMonth" class="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <button wire:click="goToToday" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
+                        Today
+                    </button>
+                    <button wire:click="nextMonth" class="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                @endif
+                <div class="flex items-center gap-1 ml-2 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                    <button 
+                        wire:click="$set('viewMode', 'cards')"
+                        class="px-4 py-2 text-sm font-medium transition-colors {{ $viewMode === 'cards' ? 'bg-primary-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' }}"
+                    >
+                        Cards
+                    </button>
+                    <button 
+                        wire:click="$set('viewMode', 'calendar')"
+                        class="px-4 py-2 text-sm font-medium transition-colors {{ $viewMode === 'calendar' ? 'bg-primary-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700' }}"
+                    >
+                        Calendar
+                    </button>
+                </div>
             </div>
         </div>
         
+        @if($viewMode === 'cards')
+        <!-- Cards View -->
+        @php
+            $colors = [
+                '#60A5FA', // Blue
+                '#FBBF24', // Yellow
+                '#A78BFA', // Purple
+                '#34D399', // Green
+                '#F87171', // Red
+                '#FB7185', // Pink
+                '#A78BFA', // Violet
+                '#22D3EE', // Cyan
+                '#FBBF24', // Orange
+                '#86EFAC', // Light Green
+                '#60A5FA', // Sky
+                '#C084FC', // Lavender
+            ];
+            $upcomingEvents = $this->events->where('event_date', '>=', now()->startOfDay())->sortBy('event_date');
+        @endphp
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            @forelse($upcomingEvents as $event)
+                @php
+                    $colorIndex = abs(crc32($event->company_name)) % count($colors);
+                    $colorHex = $colors[$colorIndex];
+                @endphp
+                <div 
+                    x-data="{ showContextMenu: false, contextMenuX: 0, contextMenuY: 0 }"
+                    @contextmenu.prevent="showContextMenu = true; contextMenuX = $event.clientX; contextMenuY = $event.clientY; return false"
+                    @click.away="showContextMenu = false"
+                    class="relative"
+                >
+                    <!-- Context Menu -->
+                    <div
+                        x-show="showContextMenu"
+                        x-transition:enter="transition ease-out duration-100"
+                        x-transition:enter-start="opacity-0 scale-95"
+                        x-transition:enter-end="opacity-100 scale-100"
+                        class="fixed z-50 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg"
+                        style="display: none;"
+                        :style="'left: ' + contextMenuX + 'px; top: ' + contextMenuY + 'px;'"
+                        @click.stop
+                    >
+                        <button
+                            onclick="$wire.editEvent({{ $event->id }})"
+                            class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                            Edit Event
+                        </button>
+                        <button
+                            onclick="$wire.duplicateEvent({{ $event->id }})"
+                            class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border-t border-gray-200 dark:border-gray-700"
+                        >
+                            Duplicate Event
+                        </button>
+                    </div>
+                    <div 
+                        wire:click="viewEvent({{ $event->id }})"
+                        class="rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-md transition group"
+                        style="background: linear-gradient(to bottom, {{ $colorHex }}15, {{ $colorHex }}05);"
+                    >
+                        <div class="p-6">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                                        {{ $event->event_title }}
+                                    </h3>
+                                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                        {{ $event->company_name }}
+                                    </p>
+                                </div>
+                                <div class="flex items-start gap-2">
+                                    @if($event->reminder_enabled)
+                                        <div class="flex-shrink-0 mt-1">
+                                            <div class="w-2 h-2 rounded-full bg-amber-500"></div>
+                                        </div>
+                                    @endif
+                                    <div class="flex-shrink-0 text-right">
+                                        <div class="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-none">
+                                            {{ $event->event_date->format('j') }}
+                                        </div>
+                                        <div class="text-xs uppercase text-gray-500 dark:text-gray-400 leading-tight mt-1">
+                                            {{ $event->event_date->format('M') }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            @if($event->notes)
+                                <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-4">
+                                    {{ $event->notes }}
+                                </p>
+                            @endif
+                            
+                            @if($event->attachment_path)
+                                <div class="flex items-center gap-2 text-sm text-primary-600 dark:text-primary-400">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                    </svg>
+                                    <span>Attachment</span>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @empty
+                <div class="col-span-full text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No upcoming events</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new event.</p>
+                </div>
+            @endforelse
+        </div>
+        @else
+        <!-- Calendar View -->
         <!-- Color Key -->
         @if($this->companies->count() > 0)
         @php
@@ -152,13 +284,13 @@
                 @endfor
             </div>
         </div>
+        @endif
     </div>
 
     <!-- Modal -->
     @if($showCreateModal)
     <div 
-        x-data="{ showModal: false }"
-        x-init="showModal = true"
+        x-data="{ showModal: true }"
         x-show="showModal"
         x-transition:enter="transition ease-out duration-200"
         x-transition:enter-start="translate-x-full"
@@ -167,7 +299,6 @@
         x-transition:leave-start="translate-x-0"
         x-transition:leave-end="translate-x-full"
         class="fixed inset-0 z-50"
-        style="display: none;"
     >
         <div class="fixed inset-0 bg-black bg-opacity-30" x-on:click="showModal = false; $wire.call('resetEventForm')"></div>
         
@@ -288,8 +419,7 @@
     <!-- View Event Modal -->
     @if($viewingEventId && $this->viewingEvent)
         <div 
-            x-data="{ showModal: false }"
-            x-init="showModal = true"
+            x-data="{ showModal: true }"
             x-show="showModal"
             x-transition:enter="transition ease-out duration-200"
             x-transition:enter-start="translate-x-full"
@@ -298,7 +428,6 @@
             x-transition:leave-start="translate-x-0"
             x-transition:leave-end="translate-x-full"
             class="fixed inset-0 z-50"
-            style="display: none;"
         >
             <div class="fixed inset-0 bg-black bg-opacity-30" x-on:click="showModal = false; $wire.call('closeViewModal')"></div>
             
@@ -416,6 +545,120 @@
                             Edit Event
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Task Modal -->
+    @if($showTaskModal)
+        <div 
+            x-data="{ showModal: true }"
+            x-show="showModal"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="translate-x-full"
+            x-transition:enter-end="translate-x-0"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="translate-x-0"
+            x-transition:leave-end="translate-x-full"
+            class="fixed inset-0 z-50"
+        >
+            <div class="fixed inset-0 bg-black bg-opacity-30" x-on:click="showModal = false; $wire.call('closeTaskModal')"></div>
+            
+            <div class="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white dark:bg-gray-800 shadow-xl overflow-y-auto">
+                <div class="p-6">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                            Add Task
+                        </h3>
+                        <button 
+                            wire:click="closeTaskModal"
+                            class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Form -->
+                    <form wire:submit.prevent="createTask" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                                Task Title <span class="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                wire:model="taskTitle"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100 text-sm"
+                                placeholder="Enter task title"
+                                required
+                            />
+                            @error('taskTitle')
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                                Description
+                            </label>
+                            <textarea
+                                wire:model="taskDescription"
+                                rows="3"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100 resize-none text-sm"
+                                placeholder="Add any details..."
+                            ></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                                Due Date <span class="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="date"
+                                wire:model="taskDueDate"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100 text-sm"
+                                required
+                            />
+                            @error('taskDueDate')
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                                Assign To
+                            </label>
+                            <select
+                                wire:model="taskAssignedTo"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-gray-100 text-sm"
+                            >
+                                <option value="">No one</option>
+                                @foreach(\App\Models\User::all() as $user)
+                                    <option value="{{ $user->id }}">{{ $user->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="flex gap-2 pt-2">
+                            <button
+                                type="button"
+                                wire:click="closeTaskModal"
+                                class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                class="flex-1 px-4 py-2 text-sm font-medium text-white bg-primary-500 rounded-lg hover:bg-primary-600"
+                            >
+                                Create Task
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
