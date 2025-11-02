@@ -1,7 +1,7 @@
 <x-filament-panels::page>
     <div class="space-y-6">
         <!-- Summary Widget -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <!-- Total Sales -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                 <div class="flex items-center gap-3 mb-2">
@@ -13,10 +13,22 @@
                     <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">Total Sales</h3>
                 </div>
                 <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ $summary['total_sales'] }}</p>
-                @if(!empty($summary['total_rebated']) && $summary['total_rebated'] !== '$0.00')
-                    <p class="text-sm text-green-600 dark:text-green-400 mt-1">Total Rebated: {{ $summary['total_rebated'] }}</p>
-                @endif
             </div>
+
+            <!-- Total Rebated -->
+            @if(!empty($summary['total_rebated']) && $summary['total_rebated'] !== '$0.00')
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="flex-shrink-0 w-10 h-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">Total Rebated</h3>
+                    </div>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ $summary['total_rebated'] }}</p>
+                </div>
+            @endif
 
             <!-- Top Products -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -28,9 +40,15 @@
                     </div>
                     <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">Top Products</h3>
                 </div>
-                <div class="space-y-1">
-                    @foreach(array_slice($summary['top_products'], 0, 3) as $product)
-                        <p class="text-sm text-gray-700 dark:text-gray-300">{{ $product['name'] }}</p>
+                <div class="space-y-2">
+                    @foreach(array_slice($summary['top_products'], 0, 5) as $index => $product)
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm font-semibold text-gray-400 w-5">{{ $index + 1 }}.</span>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $product['name'] }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">${{ number_format($product['amount'], 2) }}</p>
+                            </div>
+                        </div>
                     @endforeach
                 </div>
             </div>
@@ -61,10 +79,17 @@
 
         <!-- Monthly Folders -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     Monthly Reports
                 </h3>
+                <div class="flex items-center gap-3">
+                    <label class="text-sm text-gray-600 dark:text-gray-400">Sort:</label>
+                    <select wire:model.live="sortOrder" class="text-sm border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-primary-500 focus:ring-primary-500">
+                        <option value="desc">Newest to Oldest</option>
+                        <option value="asc">Oldest to Newest</option>
+                    </select>
+                </div>
             </div>
             
             <div class="p-6">

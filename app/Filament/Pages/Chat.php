@@ -12,7 +12,7 @@ class Chat extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-left-right';
 
-    protected static ?string $navigationLabel = 'Support Tickets';
+    protected static ?string $navigationLabel = 'Chat';
 
     protected static ?int $navigationSort = 1;
 
@@ -29,7 +29,7 @@ class Chat extends Page
     {
         return [
             Action::make('createTicket')
-                ->label('Create Ticket')
+                ->label('New Chat')
                 ->icon('heroicon-o-plus')
                 ->color('success')
                 ->action(function () {
@@ -103,7 +103,7 @@ class Chat extends Page
         $this->resetCreateForm();
 
         Notification::make()
-            ->title('Ticket created successfully')
+            ->title('Chat started successfully')
             ->success()
             ->send();
 
@@ -142,16 +142,16 @@ class Chat extends Page
         if ($this->selectedTicket->status === 'archived') {
             $this->selectedTicket->markAsUnread();
             Notification::make()
-                ->title('Ticket marked as unread')
+                ->title('Chat marked as unread')
                 ->success()
                 ->send();
             $this->activeTab = 'active';
         } else {
             $this->selectedTicket->archive();
-            Notification::make()
-                ->title('Ticket archived')
-                ->success()
-                ->send();
+        Notification::make()
+            ->title('Chat archived')
+            ->success()
+            ->send();
             $this->activeTab = 'archived';
         }
 
@@ -165,16 +165,16 @@ class Chat extends Page
         if ($ticket->status === 'archived') {
             $ticket->markAsUnread();
             Notification::make()
-                ->title('Ticket marked as unread')
+                ->title('Chat marked as unread')
                 ->success()
                 ->send();
             $this->activeTab = 'active';
         } else {
             $ticket->archive();
-            Notification::make()
-                ->title('Ticket archived')
-                ->success()
-                ->send();
+        Notification::make()
+            ->title('Chat archived')
+            ->success()
+            ->send();
             $this->activeTab = 'archived';
         }
 
@@ -263,7 +263,7 @@ class Chat extends Page
         $this->selectedTicket->save();
 
         Notification::make()
-            ->title('Ticket title updated')
+            ->title('Chat title updated')
             ->success()
             ->send();
     }

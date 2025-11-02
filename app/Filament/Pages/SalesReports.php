@@ -24,6 +24,8 @@ class SalesReports extends Page
 
     protected static string $view = 'filament.pages.sales-reports';
 
+    public string $sortOrder = 'desc'; // 'desc' for newest to oldest, 'asc' for oldest to newest
+
     public function getViewData(): array
     {
         return array_merge(parent::getViewData(), [
@@ -96,9 +98,12 @@ class SalesReports extends Page
             }
         }
         
-        // Sort by date descending
+        // Sort by date based on sortOrder
         usort($months, function($a, $b) {
-            return strcmp($b['slug'], $a['slug']);
+            if ($this->sortOrder === 'asc') {
+                return strcmp($a['slug'], $b['slug']); // Oldest to newest
+            }
+            return strcmp($b['slug'], $a['slug']); // Newest to oldest (default)
         });
         
         return $months;
@@ -156,11 +161,18 @@ class SalesReports extends Page
             if (Storage::disk('public')->exists($topProductsFile)) {
                 $data = $this->parseCsv(Storage::disk('public')->path($topProductsFile));
                 if (!empty($data) && count($data) > 1) {
-                    foreach (array_slice($data, 1, 3) as $row) {
+                    foreach (array_slice($data, 1) as $row) {
                         if (!empty($row[0])) {
+                            // Sum all numeric columns after the product name
+                            $productTotal = 0;
+                            foreach ($row as $colIndex => $cell) {
+                                if ($colIndex > 0 && is_numeric($cell)) {
+                                    $productTotal += (float)$cell;
+                                }
+                            }
                             $topProducts[] = [
                                 'name' => $row[0],
-                                'amount' => $row[1] ?? 0,
+                                'amount' => $productTotal,
                             ];
                         }
                     }
@@ -201,6 +213,28 @@ class SalesReports extends Page
         $topFranchiseesAggregated = [];
         foreach (array_slice($franchiseeTotals, 0, 5, true) as $name => $total) {
             $topFranchiseesAggregated[] = [
+                'name' => ucwords(strtolower($name)), // Auto-capitalize first letter of each word
+                'amount' => $total,
+            ];
+        }
+        
+        // Aggregate product totals
+        $productTotals = [];
+        foreach ($topProducts as $product) {
+            $name = $product['name'];
+            $amount = (float) str_replace(['$', ','], '', $product['amount']);
+            
+            if (!isset($productTotals[$name])) {
+                $productTotals[$name] = 0;
+            }
+            $productTotals[$name] += $amount;
+        }
+        
+        // Sort by total and get top 5
+        arsort($productTotals);
+        $topProductsAggregated = [];
+        foreach (array_slice($productTotals, 0, 5, true) as $name => $total) {
+            $topProductsAggregated[] = [
                 'name' => $name,
                 'amount' => $total,
             ];
@@ -209,7 +243,7 @@ class SalesReports extends Page
         return [
             'total_sales' => '$' . number_format($totalSales, 2),
             'total_rebated' => '$' . number_format($totalRebated, 2),
-            'top_products' => $topProducts,
+            'top_products' => $topProductsAggregated,
             'top_franchisees' => $topFranchiseesAggregated,
         ];
     }

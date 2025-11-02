@@ -147,7 +147,7 @@
                                     <span class="text-lg font-semibold text-gray-400 w-6">{{ $index + 1 }}.</span>
                                     <div class="flex-1">
                                         <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                            {{ $row[0] ?? '' }}
+                                            {{ ucwords(strtolower($row[0] ?? '')) }}
                                         </p>
                                         @if(isset($row[1]) && is_numeric($row[1]))
                                             <p class="text-xs text-gray-500 dark:text-gray-400">

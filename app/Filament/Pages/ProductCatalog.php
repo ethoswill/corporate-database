@@ -12,6 +12,8 @@ class ProductCatalog extends Page
 
     protected static ?int $navigationSort = 2;
 
+    protected static bool $shouldRegisterNavigation = false;
+
     public function getHeading(): string
     {
         return 'Product Catalog';

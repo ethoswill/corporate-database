@@ -1,7 +1,7 @@
 <x-filament-panels::page>
     <div class="w-full" style="background: linear-gradient(to bottom, #f0f0f0, #ffffff);">
         <div class="flex w-full" style="height: calc(100vh - 15rem);">
-        <!-- Left Sidebar - Ticket List -->
+        <!-- Left Sidebar - Chat List -->
         <div class="w-80 flex flex-col bg-white dark:bg-gray-900 border-r border-gray-300 dark:border-gray-700 overflow-hidden">
             <!-- Tabs -->
             <div class="flex border-b border-gray-200 dark:border-gray-700">
@@ -19,7 +19,7 @@
                 </button>
             </div>
 
-            <!-- Ticket List -->
+            <!-- Chat List -->
             <div class="flex-1 overflow-y-auto">
                 @forelse($this->tickets as $ticket)
                     <div
@@ -71,16 +71,16 @@
                     </div>
                 @empty
                     <div class="flex items-center justify-center h-full">
-                        <p class="text-gray-500 dark:text-gray-400 text-sm">No {{ $activeTab }} tickets</p>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm">No {{ $activeTab }} chats</p>
                     </div>
                 @endforelse
             </div>
         </div>
 
-        <!-- Right Side - Ticket Detail -->
+        <!-- Right Side - Chat Detail -->
         <div class="flex-1 flex flex-col bg-white dark:bg-gray-900 overflow-hidden">
             @if($selectedTicket)
-                <!-- Ticket Header -->
+                <!-- Chat Header -->
                 <div class="px-6 py-3 border-b border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm">
                     <div class="flex items-center justify-between">
                         <div class="flex-1">
@@ -187,8 +187,8 @@
                         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
-                        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No ticket selected</h3>
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Select a ticket to view messages</p>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No chat selected</h3>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Select a chat to view messages</p>
                     </div>
                 </div>
             @endif
@@ -259,7 +259,7 @@
                 <!-- Header -->
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                        Create New Ticket
+                        Start New Chat
                     </h3>
                     <button 
                         wire:click="resetCreateForm"
