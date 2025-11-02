@@ -6,7 +6,7 @@
                 <label class="text-sm font-medium text-gray-700">Sort by:</label>
                 <select 
                     wire:model.live="sortBy"
-                    class="text-sm border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500 bg-white px-3 py-2"
+                    class="text-sm border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500 bg-white px-3 py-2 pr-8 min-w-[220px]"
                 >
                     <option value="date_desc">Date - Newest to Oldest</option>
                     <option value="date_asc">Date - Oldest to Newest</option>
@@ -17,7 +17,7 @@
         </div>
 
         <!-- Collections Grid - 4 Wide Layout -->
-        <div class="grid gap-6" style="grid-template-columns: repeat(4, minmax(0, 1fr)); width: 100%;">
+        <div class="grid gap-6 w-full" style="grid-template-columns: repeat(4, minmax(0, 1fr));" wire:key="main-collections-grid">
             @php
                 $favorites = array_filter($collections ?? [], fn($c) => ($c['is_favorite'] ?? false) == true);
                 $regular = array_filter($collections ?? [], fn($c) => ($c['is_favorite'] ?? false) == false);

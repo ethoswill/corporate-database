@@ -40,6 +40,7 @@ class CollectionDetail extends Page
         return array_merge(parent::getViewData(), [
             'collections' => $this->collections,
             'parentCollection' => $this->parentCollection,
+            'collectionId' => $this->collectionId,
         ]);
     }
 

@@ -21,8 +21,6 @@ class Assets extends Page
 
     protected static ?string $navigationLabel = 'Collections';
 
-    protected static ?string $navigationGroup = 'Main';
-
     protected static ?int $navigationSort = 4;
 
     protected static string $view = 'filament.pages.assets';

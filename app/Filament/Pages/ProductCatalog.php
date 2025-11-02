@@ -10,8 +10,6 @@ class ProductCatalog extends Page
 
     protected static ?string $navigationLabel = 'Product Catalog';
 
-    protected static ?string $navigationGroup = 'Main';
-
     protected static ?int $navigationSort = 2;
 
     public function getHeading(): string

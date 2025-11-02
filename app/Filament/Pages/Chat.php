@@ -14,8 +14,6 @@ class Chat extends Page
 
     protected static ?string $navigationLabel = 'Support Tickets';
 
-    protected static ?string $navigationGroup = 'Main';
-
     protected static ?int $navigationSort = 1;
 
     protected static string $view = 'filament.pages.chat';

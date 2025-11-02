@@ -13,22 +13,33 @@
     $formattedDate = isset($collection['created_at']) ? \Carbon\Carbon::parse($collection['created_at'])->format('M d, Y') : '';
     $itemCount = ($collection['assets_count'] ?? 0) + ($collection['children_count'] ?? 0);
     $isFavorite = $collection['is_favorite'] ?? false;
+    $hasChildren = ($collection['children_count'] ?? 0) > 0;
+    // Determine which page to link to based on whether it has subfolders
+    $linkUrl = $hasChildren 
+        ? \App\Filament\Pages\CollectionDetail::getUrl(['collection' => $collection['id'] ?? 0])
+        : \App\Filament\Pages\AssetGallery::getUrl(['collection' => $collection['id'] ?? 0]);
 @endphp
 <div 
     class="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 relative group"
     style="aspect-ratio: 3/5; width: 100%;"
+    wire:key="collection-{{ $collection['id'] ?? 0 }}"
     x-data="{ 
         showMenu: false,
+        showContextMenu: false,
+        contextMenuX: 0,
+        contextMenuY: 0,
         isEditing: false,
         collectionName: '{{ addslashes($collection['name'] ?? '') }}'
     }"
+    @contextmenu.prevent="$event.stopPropagation(); contextMenuX = $event.clientX; contextMenuY = $event.clientY; showContextMenu = true; showMenu = false;"
     @dblclick="$event.stopPropagation(); isEditing = true"
 >
     <!-- Image Section -->
     <div class="relative bg-gray-100 overflow-hidden" style="height: 70%;">
         <a
-            href="{{ \App\Filament\Pages\CollectionDetail::getUrl(['collection' => $collection['id'] ?? 0]) }}"
-            class="absolute inset-0 z-0"
+            href="{{ $linkUrl }}"
+            class="absolute inset-0"
+            style="z-index: 1;"
         ></a>
         @if($imageUrl)
             <img 
@@ -48,7 +59,8 @@
         <button
             wire:click="toggleFavorite({{ $collection['id'] ?? 0 }})"
             @click.stop
-            class="absolute top-2 left-2 bg-white rounded-full p-1.5 shadow-md hover:bg-gray-50 transition z-40"
+            class="absolute top-2 left-2 bg-white rounded-full p-1.5 shadow-md hover:bg-gray-50 transition"
+            style="z-index: 40;"
             title="{{ $isFavorite ? 'Remove from favorites' : 'Add to favorites' }}"
         >
             @if($isFavorite)
@@ -63,11 +75,12 @@
         </button>
         
         <!-- Overlay with Upload Button -->
-        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100 z-10">
+        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
             <button
                 wire:click="openUploadModal({{ $collection['id'] ?? 0 }})"
                 @click.stop
-                class="bg-white text-gray-700 px-3 py-1 rounded text-xs font-medium hover:bg-gray-100 transition z-20"
+                class="bg-white text-gray-700 px-3 py-1 rounded text-xs font-medium hover:bg-gray-100 transition"
+                style="z-index: 40;"
             >
                 {{ $imageUrl ? 'Replace' : 'Upload Image' }}
             </button>
@@ -76,8 +89,8 @@
         <!-- Menu Button -->
         <button
             @click.stop="showMenu = !showMenu"
-            class="absolute top-2 right-2 bg-white rounded-full p-1.5 shadow-md hover:bg-gray-50 transition z-30"
-            style="opacity: 1;"
+            class="absolute top-2 right-2 bg-white rounded-full p-1.5 shadow-md hover:bg-gray-50 transition"
+            style="opacity: 1; z-index: 40;"
         >
             <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
@@ -117,11 +130,11 @@
     </div>
     
     <!-- Text Section -->
-    <div class="px-3 pt-2 pb-2 flex flex-col" style="height: 30%;">
+    <div class="px-3 flex flex-col" style="padding-top: 8px; padding-bottom: 5px;">
         <div class="relative">
             <a
-                href="{{ \App\Filament\Pages\CollectionDetail::getUrl(['collection' => $collection['id'] ?? 0]) }}"
-                class="w-full text-sm font-semibold text-gray-900 bg-transparent border-none p-0 focus:outline-none cursor-pointer hover:text-blue-600 transition block mb-0"
+                href="{{ $linkUrl }}"
+                class="w-full text-sm font-semibold text-gray-900 bg-transparent border-none p-0 focus:outline-none cursor-pointer hover:text-blue-600 transition block"
                 @click.stop
             >
                 <span
@@ -134,6 +147,7 @@
             <input
                 type="text"
                 x-model="collectionName"
+                x-ref="nameInput"
                 x-show="isEditing"
                 @blur="isEditing = false; $wire.call('updateCollectionName', {{ $collection['id'] ?? 0 }}, collectionName)"
                 @keyup.enter="isEditing = false; $wire.call('updateCollectionName', {{ $collection['id'] ?? 0 }}, collectionName)"
@@ -142,6 +156,7 @@
                 x-cloak
                 style="display: none;"
             />
+        </div>
         <div class="flex items-center justify-between text-xs text-gray-500" style="margin-top: 2px;">
             <span class="flex items-center gap-1">
                 <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
@@ -149,6 +164,49 @@
             </span>
             <span>{{ $formattedDate }}</span>
         </div>
+    </div>
+    
+    <!-- Right-Click Context Menu -->
+    <div 
+        x-show="showContextMenu"
+        x-cloak
+        @click.away="showContextMenu = false"
+        :style="`position: fixed; left: ${contextMenuX}px; top: ${contextMenuY}px; z-index: 9999;`"
+        class="bg-white rounded-lg shadow-xl py-1 min-w-[160px] border border-gray-200"
+        style="display: none;"
+        @contextmenu.prevent="showContextMenu = false"
+    >
+        <button
+            wire:click="openEditModal({{ $collection['id'] ?? 0 }})"
+            @click="showContextMenu = false"
+            class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+        >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Edit
+        </button>
+        <button
+            @click="isEditing = true; showContextMenu = false; $nextTick(() => { if ($refs.nameInput) { $refs.nameInput.focus(); $refs.nameInput.select(); } })"
+            class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+        >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+            </svg>
+            Rename
+        </button>
+        <div class="border-t border-gray-200 my-1"></div>
+        <button
+            wire:click="deleteCollection({{ $collection['id'] ?? 0 }})"
+            wire:confirm="Are you sure you want to delete this collection?"
+            @click="showContextMenu = false"
+            class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+        >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            Delete
+        </button>
     </div>
 </div>
 

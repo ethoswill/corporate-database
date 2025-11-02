@@ -17,8 +17,6 @@ class LaunchCalendar extends Page
 
     protected static ?string $navigationLabel = 'Launch Calendar';
 
-    protected static ?string $navigationGroup = 'Main';
-
     protected static ?int $navigationSort = 3;
 
     protected static string $view = 'filament.pages.launch-calendar';

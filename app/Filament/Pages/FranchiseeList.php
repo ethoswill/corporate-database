@@ -12,8 +12,6 @@ class FranchiseeList extends Page
 
     protected static ?string $navigationLabel = 'Franchisee List';
 
-    protected static ?string $navigationGroup = 'Main';
-
     protected static ?int $navigationSort = 6;
 
     public function mount(): void
