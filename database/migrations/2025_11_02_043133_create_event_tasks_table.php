@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('event_tasks', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('calendar_event_id')->constrained()->onDelete('cascade');
-            $table->foreignId('assigned_to_id')->constrained('users')->onDelete('set null')->nullable();
-            $table->string('task_title');
-            $table->text('task_description')->nullable();
-            $table->date('due_date');
-            $table->boolean('completed')->default(false);
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('event_tasks')) {
+            Schema::create('event_tasks', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('calendar_event_id')->constrained()->onDelete('cascade');
+                $table->foreignId('assigned_to_id')->constrained('users')->onDelete('set null')->nullable();
+                $table->string('task_title');
+                $table->text('task_description')->nullable();
+                $table->date('due_date');
+                $table->boolean('completed')->default(false);
+                $table->timestamps();
+            });
+        }
     }
 
     /**
